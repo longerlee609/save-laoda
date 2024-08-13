@@ -1,10 +1,40 @@
 import sys
+
 from ship import Ship
+
 import pygame
 
 from settings import Settings
 
+from bullets import Bullet
+
+from guaiwu import Kunkun
+
 class SaveLaoda:
+
+    def _check_keydown_events(self,event):
+        if event.key == pygame.K_RIGHT:
+            self.ship.moving_right = True
+        if event.key == pygame.K_LEFT:
+            self.ship.moving_left = True
+        if event.key == pygame.K_UP:
+            self.ship.moving_up = True
+        if event.key == pygame.K_DOWN:
+            self.ship.moving_down = True
+        elif event.key == pygame.K_q:
+            sys.exit()
+        elif event.key == pygame.K_SPACE:
+            self._fire_bullet()
+            self.fire_music()
+    def _check_keyup_events(self,event):
+        if event.key == pygame.K_RIGHT:
+            self.ship.moving_right = False
+        if event.key == pygame.K_LEFT:
+            self.ship.moving_left = False
+        if event.key == pygame.K_UP:
+            self.ship.moving_up = False
+        if event.key == pygame.K_DOWN:
+            self.ship.moving_down = False  
 
     def __init__(self):
         pygame.init()
@@ -14,8 +44,31 @@ class SaveLaoda:
         pygame.display.set_caption("Save Laoda")
 
 
-        #创建ship实例
+    #创建ship实例
         self.ship = Ship(self)
+        self.bullets = pygame.sprite.Group()
+        self.kunkuns = pygame.sprite.Group()
+
+        self._create_fleet()
+
+    def _create_fleet(self):
+        #设置间距
+        kunkun = Kunkun(self)
+        kunkun_width = kunkun.rect.width
+
+        current_x = kunkun_width
+        print("nb******")
+        print(current_x)
+        while current_x < (self.settings.screen_width - 2*kunkun_width):
+            new_kunkun = Kunkun(self)
+            new_kunkun.x = current_x
+            new_kunkun.rect.x = new_kunkun.x
+            self.kunkuns.add(new_kunkun)
+            current_x += 2*kunkun_width
+            print(current_x)
+
+        kunkun = Kunkun(self)
+        self.kunkuns.add(kunkun)
         
 
     def _check_events(self):
@@ -23,29 +76,37 @@ class SaveLaoda:
             if event.type == pygame.QUIT:
                 sys.exit()
             elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_RIGHT:
-                    self.ship.moving_right = True
-                if event.key == pygame.K_LEFT:
-                    self.ship.moving_left = True
-                #if event.key == pygame.K_UP:
-                    #self.ship.moving_up = True
-                #if event.key == pygame.K_DOWN:
-                    #self.ship.moving_down = True
+                self._check_keydown_events(event)
             elif event.type == pygame.KEYUP:
-                if event.key == pygame.K_RIGHT:
-                    self.ship.moving_right = False
-                if event.key == pygame.K_LEFT:
-                    self.ship.moving_left = False
-                #if event.key == pygame.K_UP:
-                    #self.ship.moving_up = False
-                #if event.key == pygame.K_DOWN:
-                    #self.ship.moving_down = False         
-
+                self._check_keyup_events(event)                
 
     def _update_screen(self):
         self.screen.fill(self.settings.bg_color)
+
+        for bullet in self.bullets.sprites():
+            bullet.draw_bullet()
+
+        for kunkun in self.kunkuns.sprites():
+            kunkun.draw_kunkun()
+
+        self.kunkuns.draw(self.screen)
+        #self.kunkuns.draw(self.screen)
         self.ship.blitme()
 
+    def _fire_bullet(self):
+        new_bullet = Bullet(self)
+        self.bullets.add(new_bullet)
+
+
+    def _update_bullets(self):
+        #更新子弹位置
+        self.bullets.update()
+
+        #删除消失的子弹
+        for bullet in self.bullets.copy():
+            if bullet.rect.bottom <= 0:
+                self.bullets.remove(bullet)
+        
     def run_game(self):
         while True:
             self._check_events()
@@ -56,7 +117,20 @@ class SaveLaoda:
 
             pygame.display.flip()
             self.clock.tick(60)
+            self.bullets.update()
 
+
+    #输入背景音乐see you again
+    file = r"see_you_again.mp3"
+    pygame.mixer.init()
+    track = pygame.mixer.music.load(file)
+    pygame.mixer.music.play()
+
+    def fire_music(self):
+        filee = r"man.mp3"
+        pygame.mixer.init()
+        track = pygame.mixer.music.load(filee)
+        pygame.mixer.music.play()
 if __name__ == "__main__":
     ai = SaveLaoda()
     ai.run_game()
