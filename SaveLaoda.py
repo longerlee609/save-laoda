@@ -50,22 +50,30 @@ class SaveLaoda:
         self.kunkuns = pygame.sprite.Group()
 
         self._create_fleet()
+    
+    def _create_kunkun(self,x_position,y_position):
+        new_kunkun = Kunkun(self)
+        new_kunkun.x = x_position
+        new_kunkun.y = y_position
+        new_kunkun.rect.x = new_kunkun.x
+        new_kunkun.rect.y = new_kunkun.y
+        self.kunkuns.add(new_kunkun)
 
     def _create_fleet(self):
         #设置间距
         kunkun = Kunkun(self)
-        kunkun_width = kunkun.rect.width
+        kunkun_width,kunkun_height = kunkun.rect.size
 
-        current_x = kunkun_width
-        print("nb******")
-        print(current_x)
-        while current_x < (self.settings.screen_width - 2*kunkun_width):
-            new_kunkun = Kunkun(self)
-            new_kunkun.x = current_x
-            new_kunkun.rect.x = new_kunkun.x
-            self.kunkuns.add(new_kunkun)
-            current_x += 2*kunkun_width
-            print(current_x)
+
+        current_x,current_y = kunkun_width,kunkun_height
+        while current_y < (self.settings.screen_height - 3*kunkun_height):
+            while current_x < (self.settings.screen_width - 2*kunkun_width):
+                self._create_kunkun(current_x,current_y)
+                current_x += 2*kunkun_width
+
+
+            current_x = kunkun_width
+            current_y += 2*kunkun_height
 
         kunkun = Kunkun(self)
         self.kunkuns.add(kunkun)
@@ -90,8 +98,15 @@ class SaveLaoda:
             kunkun.draw_kunkun()
 
         self.kunkuns.draw(self.screen)
-        #self.kunkuns.draw(self.screen)
         self.ship.blitme()
+
+    def _check_bullets_kunkun_collision(self):
+        #检查是否有子弹击中敌人
+        collisions = pygame.sprite.groupcollide(self.bullets,self.kunkuns,True,True)
+
+        if not self.kunkuns:
+            self.kunkuns.empty()
+            self._create_fleet()
 
     def _fire_bullet(self):
         new_bullet = Bullet(self)
@@ -102,10 +117,34 @@ class SaveLaoda:
         #更新子弹位置
         self.bullets.update()
 
+        
         #删除消失的子弹
         for bullet in self.bullets.copy():
             if bullet.rect.bottom <= 0:
                 self.bullets.remove(bullet)
+
+        self._check_bullets_kunkun_collision()
+
+
+    def _change_fleet_direction(self):
+        #让坤坤们向下移动，同时修改左右方向
+        for kunkun in self.kunkuns.sprites():
+            kunkun.rect.y += self.settings.fleet_drop_speed
+
+        self.settings.fleet_direction *= -1
+
+
+    def _check_fleet_edges(self):
+        for kunkun in self.kunkuns.sprites():
+            if kunkun.check_edges():
+                self._change_fleet_direction()
+                break
+
+
+    def _update_kunkun(self):
+        #检查是否有坤坤到达屏幕边缘
+        self._check_fleet_edges()
+        self.kunkuns.update()
         
     def run_game(self):
         while True:
@@ -114,7 +153,8 @@ class SaveLaoda:
             self.ship.update()
                     #刷新屏幕
             self._update_screen()
-
+            self._update_kunkun()
+            self._update_bullets()
             pygame.display.flip()
             self.clock.tick(60)
             self.bullets.update()

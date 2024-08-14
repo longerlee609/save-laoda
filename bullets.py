@@ -15,6 +15,7 @@ class Bullet(Sprite):
         self.rect = self.imagee.get_rect()
         self.rect.midtop = ai_game.ship.rect.midtop
 
+
         #储存子弹的位置
         self.y = float(self.rect.y)
 
@@ -26,3 +27,4 @@ class Bullet(Sprite):
 
     def draw_bullet(self):
         self.screen.blit(self.imagee,self.rect)
+
